@@ -70,21 +70,20 @@ def main():
             f"> 日内 `{low:,.2f} ~ {high:,.2f}` ｜ 昨收 `{prev:,.2f}`"
         ]
 
-        # 针对中证500增加“关键点位（4800点）”专属动态标注
+        # 针对中证500增加“关键点位（4800点）”专属动态标注（换行 + 小号红字）
         if code == "000905":
             diff = price - TARGET_POINT_ZZ500
             diff_pct = (diff / TARGET_POINT_ZZ500) * 100
 
             if diff < 0:
-                # 低于 4800 点
-                target_desc = f"> 🎯 **关键位 4800**：距目标还差 **{abs(diff):,.2f}** 点 (`-{abs(diff_pct):.2f}%`)"
+                text = f"🎯 关键位 4800：距目标还差 {abs(diff):,.2f} 点 (-{abs(diff_pct):.2f}%)"
             elif diff == 0:
-                # 刚好触及 4800 点
-                target_desc = f"> 🎉 **关键位 4800**：今日精准**平收于 4800 点**！"
+                text = f"🎉 关键位 4800：今日精准平收于 4800 点！"
             else:
-                # 高于 4800 点
-                target_desc = f"> 🚀 **关键位 4800**：已突破！高出 **+{diff:,.2f}** 点 (`+{diff_pct:.2f}%`)"
+                text = f"🚀 关键位 4800：已突破！高出 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
 
+            # 使用 HTML 的 <br> 换行，并通过 <font size="2" color="red"> 设置小号红字
+            target_desc = f"> <font size=\"2\" color=\"#FF3B30\">{text}</font>"
             card_lines.append(target_desc)
 
         blocks.append("\n".join(card_lines))
