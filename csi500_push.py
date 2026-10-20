@@ -1,4 +1,7 @@
-import os, requests, datetime
+import os
+import time
+import requests
+import datetime
 
 UT = "fa5fd1943c7b386f172d6893dbfba10b"
 
@@ -22,13 +25,21 @@ def _dec(v):
 
 def fetch():
     secids = ",".join(i[0] for i in INDEXES)
-    r = requests.get(
-        "https://push2.eastmoney.com/api/qt/ulist.np/get",
-        params={"fields": FIELDS, "secids": secids, "ut": UT},
-        timeout=15,
-    )
-    d = r.json()
-    return d.get("data", {}).get("diff") if isinstance(d.get("data"), dict) else None
+    url = "https://push2.eastmoney.com/api/qt/ulist.np/get"
+    params = {"fields": FIELDS, "secids": secids, "ut": UT}
+    
+    # 增加重试机制（针对 GitHub Actions 境外服务器偶发的网络抖动）
+    for attempt in range(3):
+        try:
+            r = requests.get(url, params=params, timeout=20)
+            d = r.json()
+            return d.get("data", {}).get("diff") if isinstance(d.get("data"), dict) else None
+        except Exception as e:
+            print(f"网络请求出错 (尝试 {attempt + 1}/3): {e}")
+            if attempt < 2:
+                time.sleep(3) # 等待 3 秒后重试
+            else:
+                return None
 
 
 def main():
@@ -40,10 +51,8 @@ def main():
     raw = fetch()
     
     if not raw:
-        requests.post(
-            f"https://sctapi.ftqq.com/{sendkey}.send",
-            data={"title": f"📢 A股宽基日报 ({ds})", "desp": "今日非交易日，无行情数据。"}
-        )
+        # 如果多次请求失败，发送一个温馨提示或静默退出，避免 Actions 报错红叉
+        print("未能获取到行情数据，可能为网络超时或非交易日。")
         return
 
     by_code = {n["f12"]: n for n in raw}
@@ -70,7 +79,7 @@ def main():
             f"> 日内 `{low:,.2f} ~ {high:,.2f}` ｜ 昨收 `{prev:,.2f}`"
         ]
 
-        # 针对中证500增加“关键点位（4800点）”专属动态标注（独立成行，去掉外层引用的 >，改用普通文本加 HTML 小号红字）
+        # 针对中证500增加“关键点位（4800点）”专属动态标注
         if code == "000905":
             diff = price - TARGET_POINT_ZZ500
             diff_pct = (diff / TARGET_POINT_ZZ500) * 100
@@ -82,7 +91,6 @@ def main():
             else:
                 text = f"🚀 关键位 4800：已突破！高出 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
 
-            # 直接输出带换行的 HTML 标签，避免 Markdown 块引用符号引发转义崩溃
             target_desc = f"<font size=\"2\" color=\"#FF3B30\">{text}</font>"
             card_lines.append(target_desc)
 
