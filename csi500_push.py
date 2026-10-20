@@ -33,15 +33,17 @@ def main():
     if not sendkey:
         raise SystemExit("缺少 SERVERCHAN_SENDKEY")
 
+    ds = datetime.datetime.now().strftime("%Y-%m-%d")
     raw = fetch()
+    
     if not raw:
-        requests.post(f"https://sctapi.ftqq.com/{sendkey}.send",
-                      data={"title": "A股宽基日报", "desp": "今日非交易日，无行情。"})
+        requests.post(
+            f"https://sctapi.ftqq.com/{sendkey}.send",
+            data={"title": f"📢 A股宽基日报 ({ds})", "desp": "今日非交易日，无行情数据。"}
+        )
         return
 
     by_code = {n["f12"]: n for n in raw}
-    ds = datetime.datetime.now().strftime("%Y-%m-%d")
-
     blocks = []
 
     for secid, name, c1, c2 in INDEXES:
@@ -55,21 +57,23 @@ def main():
         low   = _dec(n["f16"])
         prev  = _dec(n["f18"])
 
-        direction = "涨" if pct >= 0 else "跌"
         sign = "+" if pct >= 0 else ""
-
-        blocks.append(
-            f"{name}（{c1} / {c2}）\n"
-            f"报 {price:,.2f} 点，{direction} {sign}{pct:.2f}%。"
-            f" 日内 {low:,.2f}–{high:,.2f}，昨收 {prev:,.2f}。"
+        emoji = "🔴" if pct >= 0 else "🟢"
+        
+        # 移动端专属的“紧凑卡片”排版：核心数据一行搞定，次要数据归纳在下方
+        card = (
+            f"{emoji} **{name}** (`{c1}`)\n"
+            f"> 现价 **{price:,.2f}** ｜ 涨跌 **{sign}{pct:.2f}%**\n"
+            f"> 日内 `{low:,.2f} ~ {high:,.2f}` ｜ 昨收 `{prev:,.2f}`"
         )
+        blocks.append(card)
 
-    sep = "————————————"
-    desp = f"截至 {ds} 收盘\n\n" + (f"\n{sep}\n".join(blocks))
+    sep = "\n\n" + "—" * 18 + "\n\n"
+    desp = f"📅 **截至 {ds} 收盘**\n\n" + sep.join(blocks)
 
     requests.post(
         f"https://sctapi.ftqq.com/{sendkey}.send",
-        data={"title": "📈 A股宽基收盘", "desp": desp},
+        data={"title": f"📈 A股主要宽基收盘播报", "desp": desp},
         timeout=15,
     )
     print("ok")
