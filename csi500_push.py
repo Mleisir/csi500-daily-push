@@ -28,7 +28,6 @@ def fetch():
     url = "https://push2.eastmoney.com/api/qt/ulist.np/get"
     params = {"fields": FIELDS, "secids": secids, "ut": UT}
     
-    # 增加重试机制（针对 GitHub Actions 境外服务器偶发的网络抖动）
     for attempt in range(3):
         try:
             r = requests.get(url, params=params, timeout=20)
@@ -37,7 +36,7 @@ def fetch():
         except Exception as e:
             print(f"网络请求出错 (尝试 {attempt + 1}/3): {e}")
             if attempt < 2:
-                time.sleep(3) # 等待 3 秒后重试
+                time.sleep(3)
             else:
                 return None
 
@@ -51,7 +50,6 @@ def main():
     raw = fetch()
     
     if not raw:
-        # 如果多次请求失败，发送一个温馨提示或静默退出，避免 Actions 报错红叉
         print("未能获取到行情数据，可能为网络超时或非交易日。")
         return
 
@@ -79,19 +77,20 @@ def main():
             f"> 日内 `{low:,.2f} ~ {high:,.2f}` ｜ 昨收 `{prev:,.2f}`"
         ]
 
-        # 针对中证500增加“关键点位（4800点）”专属动态标注
+        # 针对中证500增加“关键点位（4800点）”专属动态标注（灰色斜体字样）
         if code == "000905":
             diff = price - TARGET_POINT_ZZ500
             diff_pct = (diff / TARGET_POINT_ZZ500) * 100
 
             if diff < 0:
-                text = f"🎯 关键位 4800：距目标还差 {abs(diff):,.2f} 点 (-{abs(diff_pct):.2f}%)"
+                text = f"关键位 4800：距目标还差 {abs(diff):,.2f} 点 (-{abs(diff_pct):.2f}%)"
             elif diff == 0:
-                text = f"🎉 关键位 4800：今日精准平收于 4800 点！"
+                text = f"关键位 4800：今日精准平收于 4800 点！"
             else:
-                text = f"🚀 关键位 4800：已突破！高出 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
+                text = f"关键位 4800：已突破！高出 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
 
-            target_desc = f"<font size=\"2\" color=\"#FF3B30\">{text}</font>"
+            # 使用符号 📍 配合灰色斜体 HTML 标签
+            target_desc = f"📍 <font color=\"#999999\"><i>{text}</i></font>"
             card_lines.append(target_desc)
 
         blocks.append("\n".join(card_lines))
