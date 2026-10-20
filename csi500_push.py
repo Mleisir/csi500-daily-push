@@ -112,18 +112,12 @@ def build_markdown(rows):
 
 def push(title, content):
     sendkey = os.environ.get("SERVERCHAN_SENDKEY")
-    if not sendkey:
-        raise SystemExit("缺少 SERVERCHAN_SENDKEY")
-
-    # Turbo 版接口
-    url = f"https://sctapi.ftqq.com/{sendkey}.send"
-    data = {
-        "title": title,            # 标题，别带换行
-        "desp": content,           # 正文，支持 Markdown
-    }
-    r = requests.post(url, data=data, timeout=15)
+    r = requests.post(
+        f"https://sctapi.ftqq.com/{sendkey}.send",
+        data={"title": title, "desp": content},
+        timeout=15,
+    )
     print(r.status_code, r.text)
-    # 成功时返回 JSON 里 code == 0
 
 
 def main():
