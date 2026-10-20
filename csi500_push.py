@@ -37,57 +37,83 @@ def fetch_quotes():
     return data["data"]["diff"]
 
 
+def _fmt_price(raw):
+    """东方财富 f2 类字段：有的返整数放大100倍，有的已是实数，统一处理"""
+    try:
+        v = float(raw)
+    except Exception:
+        return raw
+    # 判断：>100000 且能整除100的，多半是放大值
+    if v > 100000 and v == int(v):
+        v = v / 100
+    return f"{v:,.2f}"
+
 def fmt_row(node):
-    """把单个指数节点整理成 dict"""
     return {
         "code": node["f12"],
         "name": node["f14"],
-        "price": node["f2"],
-        "pct": node["f3"],        # 涨跌幅 %
-        "chg": node["f4"],        # 涨跌额
-        "high": node["f15"],
-        "low": node["f16"],
-        "open": node["f17"],
-        "prev_close": node["f18"],
+        "price": _fmt_price(node["f2"]),
+        "pct": float(node["f3"]),
+        "chg": float(node["f4"]),
+        "high": _fmt_price(node["f15"]),
+        "low": _fmt_price(node["f16"]),
+        "open": _fmt_price(node["f17"]),
+        "prev_close": _fmt_price(node["f18"]),
     }
 
 
-def build_markdown(rows):
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    weekday = "一二三四五五六日"[datetime.datetime.now().weekday()]
-    date_cn = f"{now}（周{weekday}）"
+def build_html(rows):
+    now = datetime.datetime.now()
+    date_str = now.strftime("%Y-%m-%d %H:%M")
 
-    lines = [
-        f"# 📈 A股核心指数日报",
-        "",
-        f"更新时间：**{date_cn}**",
-        "",
-        "| 指数 | 最新点位 | 涨跌幅 | 涨跌额 | 昨收 | 今日高 | 今日低 |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
-    ]
-
-    summary = []
+    blocks = []
     for r in rows:
         pct = r["pct"]
-        arrow = "🔴" if pct > 0 else ("🟢" if pct < 0 else "⚪️")
-        pct_str = f"{pct:+.2f}%"
-        chg_str = f"{r['chg']:+.2f}"
-        lines.append(
-            f"| {r['name']}({r['code']}) "
-            f"| **{r['price']}** "
-            f"| {arrow}{pct_str} "
-            f"| {chg_str} "
-            f"| {r['prev_close']} "
-            f"| {r['high']} "
-            f"| {r['low']} |"
-        )
-        summary.append((r["name"], pct))
+        if pct > 0:
+            color, arrow = "#e74c3c", "▲"   # 红涨
+        elif pct < 0:
+            color, arrow = "#27ae60", "▼"   # 绿跌
+        else:
+            color, arrow = "#888", "—"
 
-    lines += [
-        "",
-        "## 🧭 一句话点评",
-        "",
-    ]
+        pct_str = f"{pct:+.2f}%"
+        blocks.append(f"""
+<div style="background:#fafafa;border-radius:12px;padding:14px 16px;margin:10px 0;
+            box-shadow:0 1px 3px rgba(0,0,0,.06);font-family:-apple-system,sans-serif;">
+  <div style="font-size:16px;font-weight:600;color:#222;">{r['name']}
+    <span style="font-size:13px;color:#999;margin-left:6px;">{r['code']}</span>
+  </div>
+  <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:baseline;">
+    <span style="font-size:26px;font-weight:700;color:#222;">{r['price']}</span>
+    <span style="font-size:16px;font-weight:600;color:{color};">{arrow}{pct_str}</span>
+  </div>
+  <div style="margin-top:8px;font-size:13px;color:#666;display:flex;justify-content:space-between;">
+    <span>昨收 {r['prev_close']}</span>
+    <span>开 {r['open']}</span>
+    <span>高 {r['high']}</span>
+    <span>低 {r['low']}</span>
+  </div>
+</div>""")
+
+    # 情绪
+    avg = sum(r["pct"] for r in rows) / len(rows)
+    if avg > 1:   mood = "📈 全线偏强，注意追高"
+    elif avg > 0: mood = "🌤 小幅偏暖，结构性行情"
+    elif avg > -1:mood = "⏸ 窄幅震荡，观望为主"
+    else:         mood = "📉 偏弱整理，注意风控"
+
+    html = f"""<!DOCTYPE html><html><body style="background:#f5f5f5;padding:0;margin:0;">
+<div style="padding:12px 14px;background:#111;color:#fff;">
+  <div style="font-size:15px;">📈 A股核心指数日报</div>
+  <div style="font-size:12px;color:#aaa;margin-top:4px;">{date_str} · 仅收盘快照</div>
+</div>
+{''.join(blocks)}
+<div style="padding:12px 16px;font-size:13px;color:#555;line-height:1.7;">
+{mood}
+</div>
+<div style="padding:8px 16px 16px;font-size:11px;color:#bbb;">数据：东方财富 · 不构成投资建议</div>
+</body></html>"""
+    return html
 
     # 简单情绪判断
     avg = sum(p for _, p in summary) / len(summary)
@@ -110,21 +136,25 @@ def build_markdown(rows):
 
     return "\n".join(lines)
 
-def push(title, content):
-    sendkey = os.environ.get("SERVERCHAN_SENDKEY")
+def push(title, content_html):
+    sendkey = os.environ["SERVERCHAN_SENDKEY"]
+    # Server酱：title 纯文本，desp 传 HTML
     r = requests.post(
         f"https://sctapi.ftqq.com/{sendkey}.send",
-        data={"title": title, "desp": content},
+        data={"title": title, "desp": content_html},   # ← 直接塞 HTML
         timeout=15,
     )
     print(r.status_code, r.text)
 
 
 def main():
-    rows = [fmt_row(n) for n in fetch_quotes()]
-    md = build_markdown(rows)
-    push("📈 A股核心指数日报", md)
-    print("done")
+    rows_raw = fetch_quotes()
+    if rows_raw is None:
+        push("📈 A股日报", "今日非交易日，跳过。")
+        return
+    rows = [fmt_row(n) for n in rows_raw]
+    html = build_html(rows)
+    push("📈 A股核心指数日报", html)
 
 
 if __name__ == "__main__":
