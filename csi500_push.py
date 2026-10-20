@@ -8,9 +8,9 @@ import requests
 import datetime
 
 # ============ 配置 ============
-PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN")
-if not PUSHPLUS_TOKEN:
-    raise SystemExit("缺少环境变量 PUSHPLUS_TOKEN")
+SENDKEY = os.environ.get("SERVERCHAN_SENDKEY")
+if not SENDKEY:
+    raise SystemExit("缺少环境变量 SERVERCHAN_SENDKEY")
 
 # secids 说明：
 # 1.000905 = 中证500（上交所口径）
