@@ -9,6 +9,9 @@ INDEXES = [
 ]
 FIELDS = "f12,f14,f2,f3,f15,f16,f18"
 
+# 关键关注点位配置
+TARGET_POINT_ZZ500 = 4800.0
+
 
 def _dec(v):
     try:
@@ -60,13 +63,31 @@ def main():
         sign = "+" if pct >= 0 else ""
         emoji = "🔴" if pct >= 0 else "🟢"
         
-        # 移动端专属的“紧凑卡片”排版：核心数据一行搞定，次要数据归纳在下方
-        card = (
-            f"{emoji} **{name}** (`{c1}`)\n"
-            f"> 现价 **{price:,.2f}** ｜ 涨跌 **{sign}{pct:.2f}%**\n"
+        # 基础数据卡片
+        card_lines = [
+            f"{emoji} **{name}** (`{c1}`)",
+            f"> 现价 **{price:,.2f}** ｜ 涨跌 **{sign}{pct:.2f}%**",
             f"> 日内 `{low:,.2f} ~ {high:,.2f}` ｜ 昨收 `{prev:,.2f}`"
-        )
-        blocks.append(card)
+        ]
+
+        # 针对中证500增加“关键点位（4800点）”专属动态标注
+        if code == "000905":
+            diff = price - TARGET_POINT_ZZ500
+            diff_pct = (diff / TARGET_POINT_ZZ500) * 100
+
+            if diff < 0:
+                # 低于 4800 点
+                target_desc = f"> 🎯 **关键位 4800**：距目标还差 **{abs(diff):,.2f}** 点 (`-{abs(diff_pct):.2f}%`)"
+            elif diff == 0:
+                # 刚好触及 4800 点
+                target_desc = f"> 🎉 **关键位 4800**：今日精准**平收于 4800 点**！"
+            else:
+                # 高于 4800 点
+                target_desc = f"> 🚀 **关键位 4800**：已突破！高出 **+{diff:,.2f}** 点 (`+{diff_pct:.2f}%`)"
+
+            card_lines.append(target_desc)
+
+        blocks.append("\n".join(card_lines))
 
     sep = "\n\n" + "—" * 18 + "\n\n"
     desp = f"📅 **截至 {ds} 收盘**\n\n" + sep.join(blocks)
