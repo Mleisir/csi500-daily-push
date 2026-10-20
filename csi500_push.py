@@ -70,7 +70,7 @@ def main():
             f"> 日内 `{low:,.2f} ~ {high:,.2f}` ｜ 昨收 `{prev:,.2f}`"
         ]
 
-        # 针对中证500增加“关键点位（4800点）”专属动态标注（换行 + 小号红字）
+        # 针对中证500增加“关键点位（4800点）”专属动态标注（独立成行，去掉外层引用的 >，改用普通文本加 HTML 小号红字）
         if code == "000905":
             diff = price - TARGET_POINT_ZZ500
             diff_pct = (diff / TARGET_POINT_ZZ500) * 100
@@ -82,8 +82,8 @@ def main():
             else:
                 text = f"🚀 关键位 4800：已突破！高出 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
 
-            # 使用 HTML 的 <br> 换行，并通过 <font size="2" color="red"> 设置小号红字
-            target_desc = f"> <font size=\"2\" color=\"#FF3B30\">{text}</font>"
+            # 直接输出带换行的 HTML 标签，避免 Markdown 块引用符号引发转义崩溃
+            target_desc = f"<font size=\"2\" color=\"#FF3B30\">{text}</font>"
             card_lines.append(target_desc)
 
         blocks.append("\n".join(card_lines))
