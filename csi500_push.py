@@ -83,14 +83,14 @@ def main():
             diff_pct = (diff / TARGET_POINT_ZZ500) * 100
 
             if diff < 0:
-                text = f"关键位 4800：距目标还差 {abs(diff):,.2f} 点 (-{abs(diff_pct):.2f}%)"
+                text = f"关键位 4800：高出 {abs(diff):,.2f} 点 (-{abs(diff_pct):.2f}%)"
             elif diff == 0:
                 text = f"关键位 4800：今日精准平收于 4800 点！"
             else:
-                text = f"关键位 4800：已突破！高出 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
+                text = f"关键位 4800：距目标还差 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
 
             # 使用符号 📍 配合灰色斜体 HTML 标签
-            target_desc = f"📍 <font color=\"#999999\"><i>{text}</i></font>"
+            target_desc = f"📍 <i>{text}</i></font>"
             card_lines.append(target_desc)
 
         blocks.append("\n".join(card_lines))
