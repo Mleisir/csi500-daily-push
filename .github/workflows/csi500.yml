@@ -13,6 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 检查当前服务器时间
+        run: date -u
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
