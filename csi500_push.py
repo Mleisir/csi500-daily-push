@@ -77,22 +77,21 @@ def main():
             f"> 日内 `{low:,.2f} ~ {high:,.2f}` ｜ 昨收 `{prev:,.2f}`"
         ]
 
-        # 针对中证500增加“关键点位（4800点）”专属动态标注（纯文本换行展示）
+        # 针对中证500增加“关键点位（4800点）”专属动态标注（符号与文案分两行展示）
         if code == "000905":
             diff = price - TARGET_POINT_ZZ500
             diff_pct = (diff / TARGET_POINT_ZZ500) * 100
 
             if diff < 0:
-                # 低于 4800
-                text = f"📍 关键位 4800：低于目标 {abs(diff):,.2f} 点 (-{abs(diff_pct):.2f}%)，可加大力度购买！"
+                text = f"低于目标 {abs(diff):,.2f} 点 (-{abs(diff_pct):,.2f}%)，可加大力度购买！"
             elif diff == 0:
-                # 刚好等于 4800
-                text = f"📍 关键位 4800：今日精准平收于 4800 点！"
+                text = f"今日精准平收于 4800 点！"
             else:
-                # 超过 4800
-                text = f"📍 关键位 4800：已超目标，高出 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
+                text = f"距离目标点位还差 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
 
-            card_lines.append(text)
+            # 符号独立占一行，文案换行跟在下方
+            card_lines.append("📍 关键位 4800")
+            card_lines.append(f"{text}")
 
         blocks.append("\n".join(card_lines))
 
