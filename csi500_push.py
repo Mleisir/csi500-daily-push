@@ -94,8 +94,9 @@ def main():
             else:
                 text = f"距离目标点位还差 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
 
-            # 符号独立占一行，文案换行跟在下方
-            card_lines.append(f"📍 关键位 4800<br>{text}")
+            # 独立作为两个元素加入卡片队列，实现稳稳的换行
+            card_lines.append("📍 关键位 4800")
+            card_lines.append(text)
 
         blocks.append("\n".join(card_lines))
 
