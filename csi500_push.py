@@ -77,21 +77,22 @@ def main():
             f"> 日内 `{low:,.2f} ~ {high:,.2f}` ｜ 昨收 `{prev:,.2f}`"
         ]
 
-        # 针对中证500增加“关键点位（4800点）”专属动态标注（灰色斜体字样）
+        # 针对中证500增加“关键点位（4800点）”专属动态标注（纯文本换行展示）
         if code == "000905":
             diff = price - TARGET_POINT_ZZ500
             diff_pct = (diff / TARGET_POINT_ZZ500) * 100
 
             if diff < 0:
-                text = f"关键位 4800：高出 {abs(diff):,.2f} 点 (-{abs(diff_pct):.2f}%)"
+                # 低于 4800
+                text = f"📍 关键位 4800：低于目标 {abs(diff):,.2f} 点 (-{abs(diff_pct):.2f}%)，可加大力度购买！"
             elif diff == 0:
-                text = f"关键位 4800：今日精准平收于 4800 点！"
+                # 刚好等于 4800
+                text = f"📍 关键位 4800：今日精准平收于 4800 点！"
             else:
-                text = f"关键位 4800：距目标还差 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
+                # 超过 4800
+                text = f"📍 关键位 4800：已超目标，高出 +{diff:,.2f} 点 (+{diff_pct:.2f}%)"
 
-            # 使用符号 📍 配合灰色斜体 HTML 标签
-            target_desc = f"📍 <i>{text}</i></font>"
-            card_lines.append(target_desc)
+            card_lines.append(text)
 
         blocks.append("\n".join(card_lines))
 
