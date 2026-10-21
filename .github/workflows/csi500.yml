@@ -3,7 +3,7 @@ name: CSI500 Daily Push
 on:
   # 工作日 北京时间 15:30 触发（UTC = 北京时间 - 8）
   schedule:
-    - cron: '30 5 * * 1-5'
+    - cron: '00 5 * * 1-5'
   # 允许手动触发，方便测试
   workflow_dispatch:
 
