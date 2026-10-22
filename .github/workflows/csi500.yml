@@ -1,10 +1,9 @@
 name: CSI500 Daily Push
 
 on:
-  # 工作日 北京时间 15:30 触发（UTC = 北京时间 - 8）
   schedule:
-    - cron: '00 5 * * 1-5'
-  # 允许手动触发，方便测试
+    # 工作日 北京时间 15:00 触发（UTC 05:00）
+    - cron: '17 5 * * 1-5'
   workflow_dispatch:
 
 jobs:
@@ -22,7 +21,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install requests
 
       - name: Run push
         env:
