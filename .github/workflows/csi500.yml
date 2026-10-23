@@ -1,9 +1,9 @@
 name: CSI500 Daily Push
 
 on:
-  schedule:
+  #schedule:
     # 工作日 北京时间 15:00 触发（UTC 05:00）
-    - cron: '17 5 * * 1-5'
+   # - cron: '17 5 * * 1-5'
   workflow_dispatch:
 
 jobs:
